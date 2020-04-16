@@ -1,3 +1,6 @@
+const coinAPIURL = 'https://rest.coinapi.io/v1/exchangerate';
+const apiKey = '4FFE37EF-2F72-43BB-BDC9-734327FFABA0';
+
 const List<String> currenciesList = [
   'AUD',
   'BRL',
