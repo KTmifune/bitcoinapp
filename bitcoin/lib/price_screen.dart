@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'coin_data.dart';
@@ -11,6 +13,8 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String currentDropdownItemValue = 'USD';
+  Map<String, String> coinValue = {};
+  bool isWaiting = false;
 
   DropdownButton<String> androidDropdown() {
     String item;
@@ -29,6 +33,7 @@ class _PriceScreenState extends State<PriceScreen> {
         setState(() {
           currentDropdownItemValue = newValue;
           print(newValue);
+          getData();
         });
       },
     );
@@ -43,10 +48,33 @@ class _PriceScreenState extends State<PriceScreen> {
       backgroundColor: Colors.lightGreen,
       itemExtent: 32.0,
       onSelectedItemChanged: (selectedIndex) {
-        print(selectedIndex);
+        setState(() {
+          currentDropdownItemValue = currenciesList[selectedIndex];
+          getData();
+        });
       },
       children: itemList,
     );
+  }
+
+  void getData() async {
+    isWaiting = true;
+    try {
+      var data = await CoinData()
+          .getCoinExchangeRate(assetIdQuote: currentDropdownItemValue);
+      isWaiting = false;
+      setState(() {
+        coinValue = data;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getData();
   }
 
   @override
@@ -59,26 +87,24 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightGreen,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
+          Column(
+            children: <Widget>[
+              ExchangeCard(
+                assetBase: 'BTC',
+                assetQuote: currentDropdownItemValue,
+                value: isWaiting ? '?' : coinValue['BTC'],
               ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ? USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
+              ExchangeCard(
+                assetBase: 'ETH',
+                assetQuote: currentDropdownItemValue,
+                value: isWaiting ? '?' : coinValue['ETH'],
               ),
-            ),
+              ExchangeCard(
+                assetBase: 'LTC',
+                assetQuote: currentDropdownItemValue,
+                value: isWaiting ? '?' : coinValue['LTC'],
+              ),
+            ],
           ),
           Container(
             height: 150.0,
@@ -88,6 +114,46 @@ class _PriceScreenState extends State<PriceScreen> {
             child: Platform.isIOS ? iOSPicker() : androidDropdown(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ExchangeCard extends StatelessWidget {
+  final String assetBase;
+  final String assetQuote;
+  final String value;
+
+  ExchangeCard(
+      {@required this.assetBase,
+      @required this.assetQuote,
+      @required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+      child: Container(
+        width: 500.0,
+        child: Card(
+          semanticContainer: true,
+          color: Colors.lightGreen,
+          elevation: 10.0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+            child: Text(
+              '1 $assetBase = $value $assetQuote',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20.0,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
